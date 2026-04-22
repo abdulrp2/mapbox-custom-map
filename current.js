@@ -495,7 +495,28 @@ window.initStoreLocator = function(config) {
         img.src = iconUrl;
         img.onload = () => map.addImage('dentist-icon', img);
 
-        stores = window.storeData || [];
+        // --- Data Normalization ---
+        // Convert plain objects from data.js into GeoJSON features
+        const rawData = window.storeData || [];
+        stores = rawData.map(item => {
+            // If it's already GeoJSON, keep it
+            if (item.type === 'Feature') return item;
+
+            // Otherwise, wrap it
+            return {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: item.coords || [0, 0]
+                },
+                properties: {
+                    ...item,
+                    // Ensure 'opening_hours' exists for the logic below
+                    opening_hours: item.opening_hours || item.hours || ""
+                }
+            };
+        });
+
         activeSubset = stores;
         
         map.addSource('stores', {
